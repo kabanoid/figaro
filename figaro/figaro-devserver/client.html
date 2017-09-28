@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<script type="text/javascript">
+		var socket = new WebSocket("ws://localhost:8080/");
+		socket.onmessage = function (event) {
+			console.log(event.data);
+		}
+	</script>
+</head>
+<body>
+<p>
+Please look to the console, press CTRL+ALT+i
+</p>
+</body>
+</html>

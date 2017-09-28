@@ -1,0 +1,24 @@
+{
+  "id": "/s3proxy",
+  "cmd": "./s3proxy $PORT0",
+  "cpus": 0.1,
+  "mem": 128,
+  "disk": 0,
+  "instances": 1,
+  "env": {
+    "AWS_ACCESS_KEY_ID": "XXXX",
+    "AWS_SECRET_ACCESS_KEY": "XXXX"
+  },
+  "portDefinitions": [
+    {
+      "port": 10102,
+      "protocol": "tcp",
+      "labels": {
+        "VIP_0": "3.3.3.3:80"
+      }
+    }
+  ],
+  "uris": [
+    "https://github.com/adyatlov/s3proxy/releases/download/v1.1/s3proxy.zip"
+  ]
+}

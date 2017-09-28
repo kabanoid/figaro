@@ -1,0 +1,25 @@
+{
+  "id": "figaro-backend",
+  "cmd": "chmod +x ./devserver-linux && ./devserver-linux -addr $HOST:$PORT0",
+  "cpus": 0.5,
+  "mem": 128,
+  "disk": 0,
+  "instances": 1,
+  "container": null,
+  "portDefinitions": [
+    {
+      "port": 0,
+      "protocol": "tcp",
+      "name": "figaro-backend",
+      "labels": {
+        "VIP_0": "1.1.1.1:8080"
+      }
+    }
+  ],
+  "env": {},
+  "labels": {},
+  "healthChecks": [],
+  "uris": [
+    "http://3.3.3.3:80/eu-central-1/dreamathon-figaro/devserver-linux"
+  ]
+}
