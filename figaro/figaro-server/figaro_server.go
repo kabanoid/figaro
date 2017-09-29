@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/adyatlov/figaro"
+	"github.com/adyatlov/figaro/figaro"
 	"github.com/kelseyhightower/envconfig"
 )
 
@@ -49,24 +49,6 @@ func main() {
 		log.Println("Cannot create Figaro service:", err)
 	}
 	defer f.Close()
-	// channelsPair := &figaro.ChannelsPair{}
-	// channelsPair.Bad, err = st.GetChannelsByPrefixAndStatus("shared-",
-	// 	false, *nMessages)
-	// if err != nil {
-	// 	log.Fatalln(err)
-	// }
-	// channelsPair.Ok, err = st.GetChannelsByPrefixAndStatus("shared-",
-	// 	true, *nMessages)
-	// if err != nil {
-	// 	log.Fatalln(err)
-	// }
-	// log.Println(len(channelsPair.Ok))
-	// log.Println(len(channelsPair.Bad))
-	// pushService := figaro.NewPushService(*wsAddr)
-	// for {
-	// 	pushService.In() <- channelsPair
-	// 	time.Sleep(10 * time.Second)
-	// }
-	// wait := make(chan struct{})
-	// <-wait
+	wait := make(chan struct{})
+	<-wait
 }

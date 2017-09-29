@@ -2,10 +2,11 @@ package figaro
 
 import (
 	"fmt"
-	nlopesslack "github.com/nlopes/slack"
 	"log"
 	"strconv"
 	"time"
+
+	nlopesslack "github.com/nlopes/slack"
 )
 
 // Slack fetches Users, Messages and Channels from Slack
@@ -33,11 +34,12 @@ func (s *Slack) serveRTM() {
 	rtm := s.api.NewRTM()
 	go rtm.ManageConnection()
 	for rtmMsg := range rtm.IncomingEvents {
-		fmt.Print("Event Received: ")
+		fmt.Print("Slack: Event Received: ")
 		switch ev := rtmMsg.Data.(type) {
 		case *nlopesslack.HelloEvent:
-			log.Println("Slack RTM says Hello")
+			log.Println("Slack: RTM says Hello")
 		case *nlopesslack.MessageEvent:
+			log.Println("Slack: received RTM message")
 			apiMsg := rtmMsg.Data.(*nlopesslack.MessageEvent).Msg
 			msg := &Message{}
 			msg.UserID = apiMsg.User
@@ -48,9 +50,14 @@ func (s *Slack) serveRTM() {
 			msg.Name = apiMsg.Name
 			s.messageCh <- msg
 		case *nlopesslack.RTMError:
-			log.Printf("Slack RTM Error: %s\n", ev.Error())
+			log.Printf("Slack: RTM Error: %s\n", ev.Error())
 		case *nlopesslack.InvalidAuthEvent:
-			log.Println("Slack RTM Error: Invalid auth")
+			log.Println("Slack: invalid auth")
+		case *nlopesslack.ConnectionErrorEvent:
+			log.Println("Slack: connection error:", ev.Error())
+		default:
+			log.Print(rtmMsg.Type)
+
 		}
 	}
 }
@@ -84,14 +91,15 @@ func (s *Slack) GetMessages(chID string, ts time.Time, process ProcMsgs) error {
 		ts = time.Unix(1, 0)
 	}
 	query := nlopesslack.HistoryParameters{
-		Latest: timeToStr(time.Now()),
 		Oldest: timeToStr(ts),
+		Latest: timeToStr(time.Now()),
 		Count:  1000,
 	}
+	log.Printf("Slack: message query: %+v\n", query)
 	for {
 		history, err := s.api.GetChannelHistory(chID, query)
 		if err != nil {
-			log.Println("Cannot get messages from Slack API:", err)
+			log.Println("Slack: cannot get messages from Slack API:", err)
 			return err
 		}
 		messages := make([]*Message, 0, len(history.Messages))
@@ -99,6 +107,7 @@ func (s *Slack) GetMessages(chID string, ts time.Time, process ProcMsgs) error {
 			if apiMsg.Type != "message" {
 				continue
 			}
+			log.Printf("Slack: message: %+v\n", apiMsg)
 			msg := &Message{}
 			msg.UserID = apiMsg.User
 			msg.ChannelID = chID
@@ -117,7 +126,7 @@ func (s *Slack) GetMessages(chID string, ts time.Time, process ProcMsgs) error {
 		}
 		query.Oldest = history.Latest
 	}
-	log.Printf("Channel %v is processed.\n", chID)
+	log.Printf("Slack: channel %v is processed.\n", chID)
 	return nil
 }
 

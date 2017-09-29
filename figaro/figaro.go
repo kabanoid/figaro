@@ -28,7 +28,7 @@ type Figaro struct {
 // to update.
 func NewFigaro(sl *Slack, st *Storage, pu *PushService, channelPattern string,
 	messageLimit uint, domains []string) (*Figaro, error) {
-	log.Println("Starting Figaro...")
+	log.Println("Figaro: starting Figaro...")
 	f := &Figaro{
 		sl:             sl,
 		st:             st,
@@ -38,11 +38,11 @@ func NewFigaro(sl *Slack, st *Storage, pu *PushService, channelPattern string,
 		domains:        domains,
 	}
 	if err := f.updateStorage(); err != nil {
-		log.Println("Cannot update Storage during startup:", err)
+		log.Println("Figaro: Cannot update Storage during startup:", err)
 		return nil, err
 	}
 	go f.serve()
-	log.Println("Figaro started.")
+	log.Println("Figaro: Figaro started.")
 	return f, nil
 }
 
@@ -52,7 +52,7 @@ func (f *Figaro) serve() {
 		select {
 		case <-tickCh:
 			if err := f.updateStorage(); err != nil {
-				log.Println("Cannot update Storage during periodical update:", err)
+				log.Println("Figaro: Cannot update Storage during periodical update:", err)
 			}
 		case msg := <-f.sl.MessageCh():
 			f.processMessages([]*Message{msg})
@@ -64,7 +64,7 @@ func (f *Figaro) serve() {
 func (f *Figaro) notifyUsers() {
 	channels, err := f.st.GetChannelsByRegex(f.channelPattern, f.messageLimit)
 	if err != nil {
-		log.Println("Cannot notify users:", err)
+		log.Println("Figaro: Cannot notify users:", err)
 	}
 	ids := make([]string, 0, len(channels))
 	for _, channel := range channels {
@@ -72,7 +72,7 @@ func (f *Figaro) notifyUsers() {
 	}
 	users, err := f.st.GetUsers(ids)
 	if err != nil {
-		log.Println("Cannot notify users:", err)
+		log.Println("Figaro: Cannot notify users:", err)
 	}
 	idToEmail := make(map[string]string)
 	for _, user := range users {
@@ -92,7 +92,7 @@ func (f *Figaro) notifyUsers() {
 	sortChannelsByLastMessageTime(channelPair.Bad)
 	channelPairBytes, err := json.Marshal(channelPair)
 	if err != nil {
-		log.Fatalln("Cannot marshal channel pair:", err)
+		log.Fatalln("Figaro: Cannot marshal channel pair:", err)
 	}
 	if !bytes.Equal(channelPairBytes, f.lastChannelPairBytes) {
 		f.lastChannelPairBytes = channelPairBytes
@@ -117,53 +117,53 @@ func sortChannelsByLastMessageTime(channels []*Channel) {
 }
 
 func (f *Figaro) updateStorage() error {
-	log.Println("Updating storage...")
+	log.Println("Figaro: updating storage...")
 	if err := f.updateUsers(); err != nil {
-		log.Println("Error occurred when update users:", err)
+		log.Println("Figaro: Error occurred when update users:", err)
 		return err
 	}
 	if err := f.updateChannels(); err != nil {
-		log.Println("Error occurred when update channels:", err)
+		log.Println("Figaro: Error occurred when update channels:", err)
 		return err
 	}
 	if err := f.updateMessages(); err != nil {
-		log.Println("Error occurred when update messages:", err)
+		log.Println("Figaro: Error occurred when update messages:", err)
 		return err
 	}
-	log.Println("Storage updated.")
+	log.Println("Figaro: Storage updated.")
 	return nil
 }
 
 func (f *Figaro) updateUsers() error {
-	log.Println("Update users...")
+	log.Println("Figaro: update users...")
 	users, err := f.sl.GetUsers()
 	if err != nil {
-		log.Println("Cannot get users from Slack:", err)
+		log.Println("Figaro: Cannot get users from Slack:", err)
 		return err
 	}
 
 	err = f.st.UpdateUsers(users)
 	if err != nil {
-		log.Println("Cannot update users in Storage:", err)
+		log.Println("Figaro: Cannot update users in Storage:", err)
 		return err
 	}
-	log.Println("Users updated")
+	log.Println("Figaro: Users updated")
 	return nil
 }
 
 func (f *Figaro) updateChannels() error {
-	log.Println("Updating channels...")
+	log.Println("Figaro: Updating channels...")
 	channels, err := f.sl.GetChannels()
 	if err != nil {
-		log.Println("Cannot get channels from Slack:", err)
+		log.Println("Figaro: Cannot get channels from Slack:", err)
 		return err
 	}
 	err = f.st.UpdateChannels(channels)
 	if err != nil {
-		log.Println("Cannot update channels in Storage:", err)
+		log.Println("Figaro: Cannot update channels in Storage:", err)
 		return err
 	}
-	log.Println("Channels updated")
+	log.Println("Figaro: Channels updated")
 	return nil
 }
 
@@ -197,15 +197,15 @@ func (f *Figaro) processMessages(messages []*Message) error {
 }
 
 func (f *Figaro) updateMessages() error {
-	log.Println("Updating messages...")
+	log.Println("Figaro: updating messages...")
 	channels, err := f.sl.GetChannels()
 	if err != nil {
-		log.Println("Cannot get channels from Slack:", err)
+		log.Println("Figaro: Cannot get channels from Slack:", err)
 		return err
 	}
 
 	if len(channels) == 0 {
-		log.Println("No channels found. No messages to store.")
+		log.Println("Figaro: No channels found. No messages to store.")
 		return nil
 	}
 
@@ -215,19 +215,20 @@ func (f *Figaro) updateMessages() error {
 		go func(channel *Channel) {
 			defer wg.Done()
 			ts, err := f.st.GetLastMessageTS(channel.ID)
+			log.Println("Figaro: last message TS:", ts)
 			if err != nil {
-				log.Println("Cannot get last message TS:", err)
+				log.Println("Figaro: Cannot get last message TS:", err)
 				return
 			}
 			err = f.sl.GetMessages(channel.ID, ts, f.processMessages)
 			if err != nil {
-				log.Println("Cannot store message:", err)
+				log.Println("Figaro: Cannot store message:", err)
 				return
 			}
 		}(channel)
 	}
 	wg.Wait()
-	log.Println("Messages updated")
+	log.Println("Figaro: stop updating messages.")
 	return nil
 }
 

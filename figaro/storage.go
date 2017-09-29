@@ -13,8 +13,7 @@ const maxDBConn = 10
 
 // Storage is our DB backend
 type Storage struct {
-	connURL string
-	db      *sql.DB
+	db *sql.DB
 }
 
 // NewStorage creates a new storage with the URL connection like
@@ -27,15 +26,21 @@ func NewStorage(connURL string) (*Storage, error) {
 	s := &Storage{}
 	s.db = db
 	s.db.SetMaxOpenConns(maxDBConn)
+	log.Println("Storage: starting Storage...")
 	if err := s.createSchema(); err != nil {
 		return nil, err
 	}
+	log.Println("Storage: Storage started.")
 	return s, nil
 }
 
 func (s *Storage) createSchema() error {
-	_, err := s.db.Exec(queryCreateSchema)
-	return err
+	log.Println("Storage: creating schema...")
+	if _, err := s.db.Exec(queryCreateSchema); err != nil {
+		return err
+	}
+	log.Println("Storage: schema created.")
+	return nil
 }
 
 // Close closes db connections of the storage. Makes the storage unusable.
@@ -124,7 +129,7 @@ func (s *Storage) CountUsers() (n int64, err error) {
 // then update the text, otherwise creates a new message.
 func (s *Storage) UpdateMessage(message *Message) error {
 	_, err := s.db.Exec(queryUpdateMessage,
-		message.UserID, message.ChannelID, message.CreatedAt, message.Text)
+		message.UserID, message.ChannelID, message.CreatedAt.UTC(), message.Text)
 	return err
 }
 
@@ -149,7 +154,7 @@ func (s *Storage) UpdateMessages(messages []*Message) error {
 	defer stmt.Close()
 
 	for _, m := range messages {
-		_, err = stmt.Exec(m.UserID, m.ChannelID, m.CreatedAt, m.Text)
+		_, err = stmt.Exec(m.UserID, m.ChannelID, m.CreatedAt.UTC(), m.Text)
 		if err != nil {
 			txn.Rollback()
 			return err
