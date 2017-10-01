@@ -6,5 +6,5 @@ Web-app which allows observe many Slack channels simultaneously by listing selec
 
 ## Features
 
-* Open an intersting channel in the Slack web app.
+* Open an interesting channel in the Slack web app.
 * Mark a channel as OK which would disable the first sorting criteria for this channel till it's updated with a message from a guest user again.
